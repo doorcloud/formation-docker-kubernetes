@@ -134,6 +134,8 @@ kubectl run tmp --rm -it --restart=Never --image=busybox:1.36 -n "$NS" -- echo "
 - **`kubectl run --replicas`** : n’existe plus (ne crée plus de Deployment). Lab 4 = `Deployment`.
 - **`--rm -it` dans un script** : bloque / échoue sans TTY. Réservé au README. Sans TTY, `--attach` peut se rabattre sur `logs` avec un warning.
 - **Windows** : collez les commandes dans WSL. `export NS=...` ne survit pas à la fermeture du terminal.
+- **`serviceaccount "default" not found`** juste après `create namespace` : le ServiceAccount `default` est créé par un contrôleur, une seconde plus tard. Relancez simplement le `kubectl apply`. (Observé sur DKS.)
+- **`ContainerCreating` qui dure** : le nœud télécharge l’image ; les téléchargements sont **sérialisés** par nœud, une image lente retarde les autres. `kubectl describe pod` → événement `Pulling`. Patientez, ou voyez [docs/images-registres.md](../../docs/images-registres.md).
 
 > **macOS / Linux / WSL**  
 > `kubectl exec -it … -- sh` ouvre un shell : tapez `exit` pour rendre la main. Le sidecar `sleep` continue.

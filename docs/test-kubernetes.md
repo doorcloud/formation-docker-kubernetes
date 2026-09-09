@@ -69,6 +69,20 @@ Ne mélangez pas ce contexte avec `kind-formation-test` : un `kubectl` sans `--c
 
 Les `check.sh` respectent `KUBECONFIG`. Ne pointez pas un kubeconfig de production.
 
+### Résultat de la passe du 09/09/2026 (cluster `formation-test`, 1 × c5.large, v1.32.4, Abidjan)
+
+`scripts/k8s-check-all.sh` : **9/9 labs PASS** (lab 1 manuel : OK depuis un Mac hors réseau Door). Ce que kind n'avait pas montré, corrigé dans les labs :
+
+| Constat sur DKS | Effet | Correctif |
+|---|---|---|
+| Le ServiceAccount `default` apparaît ~1 s après `create ns` | premier `apply` refusé (`serviceaccount "default" not found`) | attente du SA dans tous les `check.sh` ; en salle, relancer la commande |
+| PV Trident (`door-ssd`, ontap-san) sans `fsType` → `fsGroup` non appliqué | `Permission denied` sur `/data` en non-root (lab 7) | `initContainer` root `chown-data` dans `pod-pvc.yaml` |
+| Docker Hub à 16 KiB/s – 1 MiB/s depuis les nœuds (ghcr.io : 5 MiB/s) | `ContainerCreating` pendant des minutes, `ImagePullBackOff` | miroir `ghcr.io/doorcloud/formation/*` + pré-pull la veille, voir [images-registres.md](images-registres.md) |
+| Pulls sérialisés par nœud (`serializeImagePulls`) ; plateforme Door encore en cours d'installation 60–90 min après `Provisioned` | même une image introuvable met 2 min à passer en `ErrImagePull` (lab 6) | timeout lab 6 porté à 240 s ; créer les clusters **la veille** |
+| c5.large : ~50 % de la mémoire déjà réservée par la plateforme Door | Pending possibles avec plusieurs labs actifs | **c5.xlarge** × 1 par cluster binôme |
+
+Vérifié conforme : Cilium 1.18 (NetworkPolicy lab 9 appliquées), `door-ssd` par défaut (`Immediate`, `Delete`), PSA non restreint par défaut sur les namespaces tenant (lab 8 : `nginx` root démarre, `privileged` refusé seulement après le label `restricted`), Helm 4 (lab 10) OK.
+
 ---
 
 ## 4. GitHub Actions — job `kind`
