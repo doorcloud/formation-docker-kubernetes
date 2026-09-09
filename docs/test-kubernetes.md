@@ -87,6 +87,16 @@ Les `check.sh` respectent `KUBECONFIG`. Ne pointez pas un kubeconfig de producti
 | Pulls sérialisés par nœud (`serializeImagePulls`) ; plateforme Door encore en cours d'installation 60–90 min après `Provisioned` | même une image introuvable met 2 min à passer en `ErrImagePull` (lab 6) | timeout lab 6 porté à 240 s ; créer les clusters **la veille** |
 | c5.large : ~50 % de la mémoire déjà réservée par la plateforme Door | Pending possibles avec plusieurs labs actifs | **c5.xlarge** × 1 par cluster binôme |
 
+### Passe du 09/09/2026 après-midi (clusters binômes `lab-binome-*`, c5.xlarge)
+
+| Constat sur DKS | Effet | Correctif / consigne |
+|---|---|---|
+| 4 clusters créés en même temps : disque du worker (copie image OpenStack) trop lent → worker jamais démarré, API bloquée à **80 %** puis **Failed** après ~40 min | aucun des 4 clusters utilisable ; un cluster `Failed` ne se rattrape pas (kubeconfig HTTP 409) | supprimer et recréer **un cluster à la fois** ; compter 10–20 min par cluster ; voir [dks-creer-cluster.md](dks-creer-cluster.md) |
+| Tunnel API → nœud (`konnectivity-agent`) resté « mort » après un redémarrage du control plane | `kubectl logs/exec/top` : `dial timeout, backstop` alors que `kubectl get` marche | `kubectl -n kube-system delete pod -l k8s-app=konnectivity-agent` (le DaemonSet le recrée en 30 s), puis retester `kubectl logs` |
+| Base de données du control plane chargée (écritures de 3–6 s) | ~1 `apply`/`create` sur 10 échoue avec `rpc error: … invalid connection` ou `http: Handler timeout` | relancer la commande, tout simplement ; les `check.sh` peuvent échouer sur ce point — relancer le lab |
+
+Checklist formateur le matin, par cluster : `kubectl get nodes` (Ready), `kubectl -n door-system get pods` (tout Running), `kubectl logs` sur un pod (tunnel OK), `kubectl top nodes` (metrics-server), `kubectl get sc` (`door-ssd` par défaut), puis `scripts/k8s-check-all.sh`.
+
 Vérifié conforme : Cilium 1.18 (NetworkPolicy lab 9 appliquées), `door-ssd` par défaut (`Immediate`, `Delete`), PSA non restreint par défaut sur les namespaces tenant (lab 8 : `nginx` root démarre, `privileged` refusé seulement après le label `restricted`), Helm 4 (lab 10) OK.
 
 ---

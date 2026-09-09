@@ -64,7 +64,7 @@ Le défaut UI (**Replicas** 3 × machine **c5.xlarge** *Recommended*) consomme t
 | API Kubernetes | **Public** (défaut Live) — indispensable pour `kubectl` depuis un laptop |
 | Dataplane apps | **Internet** (défaut) — distinct de l’API ; figé à la création |
 
-Quota : **au plus 4 créations en parallèle** par zone. Au-delà, les demandes attendent. Prévoir **7–9 minutes** jusqu’à un cluster joignable par `kubectl` (l’UI affiche souvent « ~5 minutes » : trop optimiste), puis **60–90 minutes** de plus pour que la plateforme Door finisse de s’installer (door-system, door-apigateway, door-monitoring, CSI Trident : images tirées depuis Docker Hub, lentes depuis Abidjan). D’où la règle : **créer les clusters binômes la veille**.
+Quota : **au plus 4 créations en parallèle** par zone, mais en pratique **créez-les un par un** (voir « Bloqué à 80 % » plus bas). Prévoir **7–9 minutes** jusqu’à un cluster joignable par `kubectl` (l’UI affiche souvent « ~5 minutes » : trop optimiste), puis **60–90 minutes** de plus pour que la plateforme Door finisse de s’installer (door-system, door-apigateway, door-monitoring, CSI Trident : images tirées depuis Docker Hub, lentes depuis Abidjan). D’où la règle : **créer les clusters binômes la veille**.
 
 ### Étape 1 — **General Information**
 
@@ -119,7 +119,9 @@ Navigation vers `/dks/clusters/provisioning/…`. Cinq étapes (libellés serveu
 
 Carte **While you wait** : bouton **Install Kubeconfig** dès que le control plane est prêt. Compteur **Elapsed**. **API access** doit rester **Public endpoint**.
 
-Côté API, le succès terminal s’appelle **Provisioned** (pas `Ready`). Durée observée : **7–9 minutes**. `Provisioned` ne veut pas dire « plateforme installée » : comptez encore 60–90 min avant que Trident (lab 7) réponde — vérifiez `kubectl -n kube-system get pods -l app=controller.csi.trident.netapp.io`. Suppression : **2–4 minutes**.
+Côté API, le succès terminal s’appelle **Provisioned** (pas `Ready`). Durée observée : **7–9 minutes** quand tout va bien, **jusqu’à 20 minutes** si le disque du worker met du temps à se copier. `Provisioned` ne veut pas dire « plateforme installée » : comptez encore 60–90 min avant que Trident (lab 7) réponde — vérifiez `kubectl -n kube-system get pods -l app=controller.csi.trident.netapp.io`. Suppression : **2–4 minutes**.
+
+**Bloqué à 80 % (« Control plane ready ») puis « Setup failed » ?** Le control plane est prêt mais le worker n’a jamais démarré (copie de l’image disque trop lente côté OpenStack, le contrôleur réessaie toutes les 10 min). Au bout de ~40 min l’API passe le cluster en **Failed** ; un cluster `Failed` ne se rattrape pas (kubeconfig HTTP 409, plateforme Door jamais installée) : **supprimez-le et recréez-le**. Créez les clusters **un par un** (attendre `Provisioned` avant le suivant) — 4 créations simultanées font échouer les quatre.
 
 ---
 
