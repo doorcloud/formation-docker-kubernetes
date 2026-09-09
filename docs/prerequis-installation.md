@@ -203,7 +203,7 @@ Créez un compte **gratuit** sur [hub.docker.com](https://hub.docker.com/signup)
 docker login
 ```
 
-Sans compte, Docker Hub limite à **10 pulls par heure et par adresse IP**. Avec un compte authentifié : **100 pulls par heure**. En salle, tout le monde sort souvent **par la même IP** : sans `docker login`, le deuxième ou troisième stagiaire verra `toomanyrequests`.
+Sans compte, Docker Hub limite à **100 pulls par 6 heures et par adresse IP publique** (une image multi-arch compte un pull par architecture). Avec un compte Personal authentifié : **200 pulls par 6 heures, par compte**. En salle, tout le monde sort souvent **par la même IP** : sans `docker login`, le quota anonyme est partagé par toute la salle et certains verront `toomanyrequests`.
 
 La veille, sur votre Wi-Fi personnel (après `docker login`) :
 

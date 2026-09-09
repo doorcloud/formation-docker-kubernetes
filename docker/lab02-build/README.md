@@ -177,13 +177,13 @@ docker images localhost:5005/flask-good
 
 ## Étape 11 — Docker Hub (theorie, ne pas executer)
 
-Pour publier sur le Hub (compte gratuit, 100 pulls/h une fois `docker login` fait — utile en salle derriere une seule IP NAT) :
+Pour publier sur le Hub (compte gratuit : 200 pulls / 6 h par compte une fois `docker login` fait — utile en salle derriere une seule IP NAT) :
 
 1. `docker login` (identifiants Docker Hub).
 2. `docker tag flask-good:1.0.0 <votre-compte>/flask-good:1.0.0`
 3. `docker push <votre-compte>/flask-good:1.0.0`
 
-Sans compte, le rate-limit anonyme (10 pulls/h/IP) est vite atteint avec 8-10 stagiaires. Ne poussez **pas** d'image de lab vers un depot public pendant la formation.
+Sans compte, le rate-limit anonyme (100 pulls / 6 h, partage par toute la salle derriere la meme IP) est vite atteint avec 8-10 stagiaires. Ne poussez **pas** d'image de lab vers un depot public pendant la formation.
 
 ---
 

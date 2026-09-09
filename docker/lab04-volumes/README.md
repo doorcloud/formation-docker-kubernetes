@@ -196,7 +196,7 @@ docker run --rm \
 Équivalent bind (lecture seule) :
 
 ```bash
-docker run --rm --name web-mount \
+docker run -d --rm --name web-mount \
   -p 8085:80 \
   --mount type=bind,src="$(pwd)/html",dst=/usr/share/nginx/html,readonly \
   nginx:1.27-alpine
