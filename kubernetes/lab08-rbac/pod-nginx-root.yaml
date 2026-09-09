@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-root-interdit
+  labels:
+    app.kubernetes.io/name: nginx-root-interdit
+spec:
+  securityContext:
+    runAsNonRoot: true
+  containers:
+    - name: nginx
+      image: nginx:1.27-alpine
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
+          name: http
+      resources:
+        requests:
+          cpu: 20m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi

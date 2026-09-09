@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: lecteur-pod-deleter
+  labels:
+    app.kubernetes.io/name: lecteur-pod-deleter
+subjects:
+  - kind: ServiceAccount
+    name: lecteur
+roleRef:
+  kind: Role
+  name: pod-deleter
+  apiGroup: rbac.authorization.k8s.io

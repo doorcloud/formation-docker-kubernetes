@@ -1,0 +1,50 @@
+# Valeurs par défaut du chart webapp (formation).
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: 1.27-alpine
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Rendu dans templates/configmap.yaml → index.html
+message: "Bonjour"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 2
+  periodSeconds: 5
+
+# nginx officiel écoute 80 en root ; runAsNonRoot casserait l'image.
+securityContext:
+  allowPrivilegeEscalation: false
+
+podSecurityContext: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

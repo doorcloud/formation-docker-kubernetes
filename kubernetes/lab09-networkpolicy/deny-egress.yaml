@@ -1,0 +1,12 @@
+# Étape 4 (optionnelle) : isole aussi le trafic SORTANT du namespace.
+# Sans règle egress, le DNS casse (les pods ne joignent plus CoreDNS).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-egress
+  labels:
+    app.kubernetes.io/name: deny-egress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress

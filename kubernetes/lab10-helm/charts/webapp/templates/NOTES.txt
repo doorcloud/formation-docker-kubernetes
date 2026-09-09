@@ -1,0 +1,7 @@
+1. Après `helm install`, exposez le Service en local (autre terminal) :
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "webapp.fullname" . }} 8080:{{ .Values.service.port }}
+
+2. Puis : curl -s http://127.0.0.1:8080
+
+   Message rendu : {{ .Values.message | quote }}

@@ -1,0 +1,118 @@
+name: Kubernetes labs
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - 'kubernetes/**'
+      - 'scripts/k8s-*'
+      - '.github/workflows/k8s-labs.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'kubernetes/**'
+      - 'scripts/k8s-*'
+      - '.github/workflows/k8s-labs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer shellcheck et yamllint
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck yamllint
+
+      - name: ShellCheck
+        run: |
+          find kubernetes -type f -name '*.sh' -print0 2>/dev/null \
+            | xargs -0 -r shellcheck
+          shellcheck scripts/k8s-check-all.sh scripts/k8s-cleanup-all.sh
+
+      - name: Yamllint
+        run: |
+          yamllint -c .yamllint.yml .github/workflows/k8s-labs.yml
+          find kubernetes -type f \( -name '*.yml' -o -name '*.yaml' \) -print0 2>/dev/null \
+            | xargs -0 -r yamllint -c .yamllint.yml
+
+      - name: kubectl dry-run (skip)
+        run: |
+          echo "SKIP: kubectl --dry-run=client -f exige un apiserver ; pas de cluster dans ce job."
+
+      - name: Installer Helm 4
+        uses: azure/setup-helm@v4.3.1
+        with:
+          version: v4.2.4
+
+      - name: helm lint
+        run: |
+          helm version
+          found=0
+          while IFS= read -r -d '' file; do
+            chart="$(dirname "$file")"
+            found=1
+            echo "helm lint ${chart}"
+            helm lint "$chart"
+          done < <(find kubernetes -type f -name Chart.yaml -path '*/charts/*' -print0 2>/dev/null)
+          if [ "$found" -eq 0 ]; then
+            echo "SKIP: aucun kubernetes/**/charts/*/Chart.yaml"
+          fi
+
+      - name: Chaînes interdites
+        run: |
+          # Motifs assemblés pour que ce fichier ne se matche pas lui-même.
+          re="beope"
+          re="${re}n|cba"
+          re="${re}o|boa"
+          re="${re}group|MyP@ssW"
+          re="${re}0rd|ondigitalocea"
+          re="${re}n|witt"
+          re="${re}i"
+          set +e
+          grep -rIiE "$re" --exclude-dir=.git .
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Chaîne interdite trouvée."
+            exit 1
+          fi
+
+  kind:
+    name: kind
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer Helm 4
+        uses: azure/setup-helm@v4.3.1
+        with:
+          version: v4.2.4
+
+      - name: Cluster kind
+        uses: helm/kind-action@v1.15.0
+        with:
+          version: v0.33.0
+          kubectl_version: v1.37.0
+          cluster_name: formation
+          wait: 120s
+          node_image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5
+
+      - name: helm / kubectl
+        run: |
+          helm version
+          kubectl version --client
+          kubectl get nodes
+
+      - name: k8s-check-all.sh
+        run: bash scripts/k8s-check-all.sh
