@@ -60,10 +60,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$PREFIX" && -n "$COUNT" ]] || usage
-[[ "$COUNT" =~ ^[0-9]+$ ]] && [[ "$COUNT" -ge 1 ]] || {
+if [[ ! "$COUNT" =~ ^[0-9]+$ ]] || [[ "$COUNT" -lt 1 ]]; then
   echo "count doit être un entier >= 1" >&2
   exit 2
-}
+fi
 [[ "$PREFIX" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]*$ ]] || {
   echo "prefix invalide : $PREFIX" >&2
   exit 2
