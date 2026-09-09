@@ -33,7 +33,10 @@ jobs:
           set -euo pipefail
           grep -vE '^\s*(#|$)' kubernetes/images.txt | while read -r src dst; do
             echo "== $src -> $dst"
-            docker buildx imagetools create --tag "$dst" "$src"
+            docker buildx imagetools create --tag "$dst" \
+              --annotation "index:org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+              --annotation "index:org.opencontainers.image.description=Miroir de $src pour les labs Kubernetes (formation Cloudoor)" \
+              "$src"
             docker buildx imagetools inspect "$dst" >/dev/null
           done
 
