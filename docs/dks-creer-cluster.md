@@ -167,7 +167,7 @@ Surface client : `https://dks-api.apps.door.cloud`, chemins `/v1/public/…`. En
 
 ```bash
 TOKEN=$TOKEN          # jeton Bearer, jamais commité
-ORG=$ORG              # nom d’organisation, ex. formation-k8s
+ORG=$ORG              # nom d'organisation, ex. formation-k8s
 API=https://dks-api.apps.door.cloud
 
 # Catalogue (versions, tailles, défauts)
@@ -190,7 +190,7 @@ curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
   }' \
   "$API/v1/public/clusters"
 
-# Suivre jusqu’à phase=Provisioned
+# Suivre jusqu'à phase=Provisioned
 curl -sS -H "Authorization: Bearer $TOKEN" \
   "$API/v1/public/clusters/$ID/state"
 
@@ -199,7 +199,7 @@ curl -sS -D - -H "Authorization: Bearer $TOKEN" \
   "$API/v1/public/clusters/$ID/kubeconfig?format=plain" \
   -o lab-binome-1-kubeconfig.yaml
 
-# Forcer l’API publique puis re-télécharger le kubeconfig
+# Forcer l'API publique puis re-télécharger le kubeconfig
 curl -sS -X PATCH -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"exposure_mode":"public"}' \

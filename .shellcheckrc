@@ -1,0 +1,2 @@
+# Fonctions appelees via trap / indirectement : faux positifs "unreachable" (shellcheck 0.9+)
+disable=SC2317,SC2329
