@@ -15,7 +15,7 @@
 - `kubectl get nodes` OK (kubeconfig du cluster de la formation).
 - Labs 03–04 faits (namespace, Pod, Deployment, Service).
 - Terminal : macOS (Terminal / iTerm, zsh ou bash), **Windows : Ubuntu WSL ou Git Bash** (pas PowerShell), Linux : bash.
-- Images : `nginx:1.27-alpine`, `busybox:1.36` (tags figés, jamais `:latest`).
+- Images : `ghcr.io/doorcloud/formation/nginx:1.27-alpine`, `ghcr.io/doorcloud/formation/busybox:1.36` (tags figés, jamais `:latest`).
 
 ```bash
 cd kubernetes/lab06-debug
@@ -64,7 +64,7 @@ kubectl describe pod image-introuvable -n "$NS"
 kubectl get events -n "$NS" --sort-by=.lastTimestamp
 ```
 
-**Résultat attendu :** `Failed to pull image "nginx:1.27-alpine-doesnotexist"` ; raison `ErrImagePull` / `ImagePullBackOff`. Les events les plus récents sont en bas.
+**Résultat attendu :** `Failed to pull image "ghcr.io/doorcloud/formation/nginx:1.27-alpine-doesnotexist"` ; raison `ErrImagePull` / `ImagePullBackOff`. Les events les plus récents sont en bas.
 
 Le kubelet **n’exécute jamais** le conteneur : `kubectl logs` est vide (ou « waiting to start »). Ce n’est pas un bug applicatif.
 
@@ -119,7 +119,7 @@ POD=$(kubectl get pod -n "$NS" -l app.kubernetes.io/name=web-pas-pret \
   -o jsonpath='{.items[0].metadata.name}')
 echo "Pod cible : $POD"
 kubectl debug -it "pod/${POD}" -n "$NS" \
-  --image=busybox:1.36 \
+  --image=ghcr.io/doorcloud/formation/busybox:1.36 \
   --target=nginx \
   --profile=general
 ```
@@ -204,7 +204,7 @@ kubectl get endpointslices -n "$NS" -l kubernetes.io/service-name=web-pas-pret
 - **Warning `v1 Endpoints is deprecated`** (Kubernetes 1.33+) : `kubectl get endpoints` marche encore ; préférez `kubectl get endpointslices` comme dans l’étape 4. Ce n’est pas un échec du lab.
 
 > **DKS**
-> Si `kubectl get ns "$NS" --show-labels` contient `pod-security.kubernetes.io/enforce=restricted`, les Pods **Nginx officiels** (root) de ce lab peuvent être **refusés à l’admission** (`violates PodSecurity`) au lieu d’`ImagePullBackOff` / `0/1 Ready`. Notez le message. Le Pod `crash-loop` (busybox non-root) reste valable. Pour la démo probe, le formateur peut substituer `nginxinc/nginx-unprivileged:1.27-alpine` (écoute **8080**). `kubectl top` peut fonctionner si metrics-server est installé (contrairement à kind).
+> Si `kubectl get ns "$NS" --show-labels` contient `pod-security.kubernetes.io/enforce=restricted`, les Pods **Nginx officiels** (root) de ce lab peuvent être **refusés à l’admission** (`violates PodSecurity`) au lieu d’`ImagePullBackOff` / `0/1 Ready`. Notez le message. Le Pod `crash-loop` (busybox non-root) reste valable. Pour la démo probe, le formateur peut substituer `ghcr.io/doorcloud/formation/nginx-unprivileged:1.27-alpine` (écoute **8080**). `kubectl top` peut fonctionner si metrics-server est installé (contrairement à kind).
 
 ## Nettoyage
 

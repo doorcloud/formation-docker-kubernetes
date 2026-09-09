@@ -8,7 +8,7 @@
 - Vérifier les droits avec `kubectl auth can-i` et `--as=system:serviceaccount:$NS:lecteur`.
 - Émettre un jeton (`kubectl create token`) et appeler l’API **depuis un Pod** avec le token monté (`curl` + `ca.crt`) : **GET 200**, **DELETE 403**.
 - Ajouter un **second Role** (`delete`) et retester : DELETE autorisé.
-- Voir `runAsNonRoot` échouer sur `nginx:1.27-alpine` (root) et réussir avec `nginxinc/nginx-unprivileged:1.27-alpine`.
+- Voir `runAsNonRoot` échouer sur `ghcr.io/doorcloud/formation/nginx:1.27-alpine` (root) et réussir avec `ghcr.io/doorcloud/formation/nginx-unprivileged:1.27-alpine`.
 - Poser `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, `readOnlyRootFilesystem` là où c’est possible.
 - Labelliser le namespace `pod-security.kubernetes.io/enforce=restricted` et constater le **rejet** d’un Pod privileged.
 
@@ -16,7 +16,7 @@
 
 - `kubectl get nodes` OK. Lab 03 (namespace).
 - Terminal bash/zsh ; **Windows = WSL ou Git Bash**.
-- Images : `curlimages/curl:8.10.1`, `registry.k8s.io/pause:3.10`, `nginx:1.27-alpine`, `nginxinc/nginx-unprivileged:1.27-alpine`.
+- Images : `ghcr.io/doorcloud/formation/curl:8.10.1`, `registry.k8s.io/pause:3.10`, `ghcr.io/doorcloud/formation/nginx:1.27-alpine`, `ghcr.io/doorcloud/formation/nginx-unprivileged:1.27-alpine`.
 
 ```bash
 cd kubernetes/lab08-rbac
@@ -153,7 +153,7 @@ kubectl get pod cible -n "$NS"
 
 ## Étape 5 — SecurityContext : root vs non-root
 
-L’image officielle `nginx:1.27-alpine` s’exécute en **uid 0**. `runAsNonRoot: true` sans `runAsUser` non-root est rejeté **par le kubelet** (pas par RBAC).
+L’image officielle `ghcr.io/doorcloud/formation/nginx:1.27-alpine` s’exécute en **uid 0**. `runAsNonRoot: true` sans `runAsUser` non-root est rejeté **par le kubelet** (pas par RBAC).
 
 ```bash
 kubectl apply -n "$NS" -f pod-nginx-root.yaml
@@ -174,7 +174,7 @@ kubectl wait --for=condition=Ready pod/nginx-unprivileged -n "$NS" --timeout=120
 kubectl get pod nginx-unprivileged -n "$NS" -o jsonpath='{.spec.containers[0].securityContext}' ; echo
 ```
 
-**Résultat attendu :** Pod `Ready`. Image `nginxinc/nginx-unprivileged:1.27-alpine` (uid 101, port **8080**). Le manifeste pose `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, `readOnlyRootFilesystem: true` + `emptyDir` sur `/tmp`, `/var/cache/nginx`, `/var/run` (Nginx doit écrire son pid/cache).
+**Résultat attendu :** Pod `Ready`. Image `ghcr.io/doorcloud/formation/nginx-unprivileged:1.27-alpine` (uid 101, port **8080**). Le manifeste pose `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, `readOnlyRootFilesystem: true` + `emptyDir` sur `/tmp`, `/var/cache/nginx`, `/var/run` (Nginx doit écrire son pid/cache).
 
 C’est le profil **minimal** attendu en salle : l’image officielle Nginx **ne** permet **pas** `runAsNonRoot` sans casser le démarrage.
 
@@ -200,7 +200,7 @@ kubectl label namespace "$NS" pod-security.kubernetes.io/enforce- --overwrite
 (retrait du label — optionnel ; en fin de lab le nettoyage ciblé suffit.)
 
 > **DKS**
-> Le namespace tenant peut **déjà** être en `enforce=restricted` (ou `baseline`). Dans ce cas l’étape 6 est déjà « faite » par la plateforme : le Pod privileged est refusé **sans** que vous posiez le label. Posez-le quand même (idempotent). Si `nginx:1.27-alpine` **sans** SecurityContext restricted est rejeté plus tôt, c’est la même admission — notez le message et continuez avec `nginx-unprivileged`.
+> Le namespace tenant peut **déjà** être en `enforce=restricted` (ou `baseline`). Dans ce cas l’étape 6 est déjà « faite » par la plateforme : le Pod privileged est refusé **sans** que vous posiez le label. Posez-le quand même (idempotent). Si `ghcr.io/doorcloud/formation/nginx:1.27-alpine` **sans** SecurityContext restricted est rejeté plus tôt, c’est la même admission — notez le message et continuez avec `nginx-unprivileged`.
 
 ---
 

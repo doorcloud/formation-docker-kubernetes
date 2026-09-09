@@ -65,7 +65,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: curl
-      image: curlimages/curl:8.10.1
+      image: ghcr.io/doorcloud/formation/curl:8.10.1
       imagePullPolicy: IfNotPresent
       command: ["curl", "-sf", "--max-time", "10", "${url}"]
       resources:

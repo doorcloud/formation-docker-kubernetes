@@ -14,7 +14,7 @@
 
 - `kubectl get nodes` OK.
 - Lab 03 (namespace + Pod). Terminal bash/zsh ; **Windows = WSL ou Git Bash**.
-- Image : `busybox:1.36`.
+- Image : `ghcr.io/doorcloud/formation/busybox:1.36`.
 
 ```bash
 cd kubernetes/lab07-stockage

@@ -9,7 +9,7 @@ spec:
     fsGroup: 999
   containers:
     - name: redis
-      image: redis:7-alpine
+      image: ghcr.io/doorcloud/formation/redis:7-alpine
       command:
         - redis-server
         - /usr/local/etc/redis/redis.conf

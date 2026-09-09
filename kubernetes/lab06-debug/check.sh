@@ -129,7 +129,7 @@ web_pod="$(kc get pod -n "$NS" -l app.kubernetes.io/name=web-pas-pret \
   -o jsonpath='{.items[0].metadata.name}')"
 [[ -n "$web_pod" ]] || fail "aucun Pod web-pas-pret Running pour kubectl debug"
 kc debug "pod/${web_pod}" -n "$NS" \
-  --image=busybox:1.36 \
+  --image=ghcr.io/doorcloud/formation/busybox:1.36 \
   --target=nginx \
   --profile=general \
   --attach=false \

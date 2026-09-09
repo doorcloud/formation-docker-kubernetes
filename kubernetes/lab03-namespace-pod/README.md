@@ -13,7 +13,7 @@
 ## Prérequis
 
 - Lab 02 : `kubectl get nodes` OK, contexte courant correct.
-- Images : `nginx:1.27-alpine`, `busybox:1.36` (tags figés, jamais `:latest`).
+- Images : `ghcr.io/doorcloud/formation/nginx:1.27-alpine`, `ghcr.io/doorcloud/formation/busybox:1.36` (tags figés, jamais `:latest`).
 - Terminal bash / zsh / WSL Ubuntu / Git Bash (pas PowerShell).
 
 ```bash
@@ -46,7 +46,7 @@ kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
 
 Ouvrez `pod.yaml` : deux conteneurs, labels `app.kubernetes.io/name`, `requests` / `limits` sur **chaque** conteneur (un cluster partagé peut avoir des quotas).
 
-L’image officielle `nginx:1.27-alpine` écoute en **root** sur le port 80 : on ne met pas `runAsNonRoot` (ça casserait le bind). Le sidecar `busybox:1.36` fait `sleep 3600` (busybox n’a pas `sleep infinity`).
+L’image officielle `ghcr.io/doorcloud/formation/nginx:1.27-alpine` écoute en **root** sur le port 80 : on ne met pas `runAsNonRoot` (ça casserait le bind). Le sidecar `ghcr.io/doorcloud/formation/busybox:1.36` fait `sleep 3600` (busybox n’a pas `sleep infinity`).
 
 ```bash
 kubectl apply -n "$NS" -f pod.yaml
@@ -118,7 +118,7 @@ Ce YAML est **l’état actuel** (status inclus), pas seulement le fichier `pod.
 `kubectl run` crée un Pod (plus un Deployment depuis Kubernetes 1.18). Pour un essai d’une commande :
 
 ```bash
-kubectl run tmp --rm -it --restart=Never --image=busybox:1.36 -n "$NS" -- echo "pod jetable OK"
+kubectl run tmp --rm -it --restart=Never --image=ghcr.io/doorcloud/formation/busybox:1.36 -n "$NS" -- echo "pod jetable OK"
 ```
 
 **Résultat attendu :** `pod jetable OK`, puis le Pod est **supprimé** (`--rm`). `--restart=Never` = un Job d’une fois, pas un redémarrage infini. `-it` = terminal interactif (TTY) : à utiliser dans **votre** shell, pas dans un script.

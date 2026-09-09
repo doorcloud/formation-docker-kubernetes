@@ -15,7 +15,7 @@
 - `kubectl` configuré : `kubectl get nodes` OK.
 - **Helm 4** : `helm version` affiche `v4.x` (ex. `v4.2.3`). Helm 3 installe encore ce chart (`apiVersion: v2`) mais les flags et le défaut Server-Side Apply diffèrent.
 - Terminal : macOS (Terminal / iTerm, zsh ou bash), **Windows : Ubuntu WSL ou Git Bash** (pas PowerShell), Linux : bash.
-- Image : `nginx:1.27-alpine` (tag figé).
+- Image : `ghcr.io/doorcloud/formation/nginx:1.27-alpine` (tag figé).
 
 Depuis la racine du dépôt cloné :
 
@@ -65,7 +65,7 @@ cat charts/webapp/Chart.yaml
 cat charts/webapp/values.yaml
 ```
 
-**Résultat attendu :** `apiVersion: v2`, `appVersion: "1.27"`, `image.repository: nginx`, `image.tag: 1.27-alpine`, `replicaCount: 1`, `service.type: ClusterIP`, `message: "Bonjour"`. Le ConfigMap rend `message` dans `index.html`.
+**Résultat attendu :** `apiVersion: v2`, `appVersion: "1.27"`, `image.repository: ghcr.io/doorcloud/formation/nginx`, `image.tag: 1.27-alpine`, `replicaCount: 1`, `service.type: ClusterIP`, `message: "Bonjour"`. Le ConfigMap rend `message` dans `index.html`.
 
 ---
 
@@ -134,7 +134,7 @@ Sans second terminal, un pod `curl` dans le namespace (comme `check.sh`) :
 
 ```bash
 kubectl -n "$NS" run curl-lab --rm -q -i --restart=Never \
-  --image=curlimages/curl:8.10.1 --command -- \
+  --image=ghcr.io/doorcloud/formation/curl:8.10.1 --command -- \
   curl -sf "http://webapp.${NS}.svc"
 ```
 
@@ -215,7 +215,7 @@ kubectl -n "$NS" get deploy,svc
 - **Ingress NGINX SIG** : ne plus `helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx`. Pour exposer : `port-forward` (ce lab), Service `LoadBalancer` sur DKS, ou Gateway API si le formateur le démontre.
 - **Bitnami** : ne plus `helm repo add bitnami https://charts.bitnami.com/bitnami` comme dans l'ancien cours.
 - **Helm 4 `--wait`** : si un compte de service CI n'a pas `watch`, `--wait` échoue tout de suite. Ici on utilise plutôt `kubectl wait` / `rollout status`.
-- Image `nginx:1.27-alpine` : processus **root** (port 80). `runAsNonRoot` casserait le conteneur ; d'où `allowPrivilegeEscalation: false` seulement.
+- Image `ghcr.io/doorcloud/formation/nginx:1.27-alpine` : processus **root** (port 80). `runAsNonRoot` casserait le conteneur ; d'où `allowPrivilegeEscalation: false` seulement.
 
 ## Nettoyage
 

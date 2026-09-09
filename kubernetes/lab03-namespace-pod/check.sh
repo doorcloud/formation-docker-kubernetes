@@ -48,8 +48,8 @@ ok "sidecar wget http://localhost:80 (page nginx)"
 
 # kubectl run jetable, non interactif (le README montre --rm -it)
 tmp="tmp-check-${RANDOM}"
-kc run "$tmp" -n "$NS" --restart=Never --image=busybox:1.36 \
-  --overrides="{\"spec\":{\"containers\":[{\"name\":\"${tmp}\",\"image\":\"busybox:1.36\",\"command\":[\"echo\",\"ok\"],\"resources\":{\"requests\":{\"cpu\":\"10m\",\"memory\":\"16Mi\"},\"limits\":{\"cpu\":\"50m\",\"memory\":\"32Mi\"}}}]}}" \
+kc run "$tmp" -n "$NS" --restart=Never --image=ghcr.io/doorcloud/formation/busybox:1.36 \
+  --overrides="{\"spec\":{\"containers\":[{\"name\":\"${tmp}\",\"image\":\"ghcr.io/doorcloud/formation/busybox:1.36\",\"command\":[\"echo\",\"ok\"],\"resources\":{\"requests\":{\"cpu\":\"10m\",\"memory\":\"16Mi\"},\"limits\":{\"cpu\":\"50m\",\"memory\":\"32Mi\"}}}]}}" \
   >/dev/null
 
 tmp_deadline=$((SECONDS + 120))

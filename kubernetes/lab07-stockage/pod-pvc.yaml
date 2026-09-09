@@ -18,7 +18,7 @@ spec:
   # au bon utilisateur une fois, avec un initContainer root (voir README, section Pieges).
   initContainers:
     - name: chown-data
-      image: busybox:1.36
+      image: ghcr.io/doorcloud/formation/busybox:1.36
       imagePullPolicy: IfNotPresent
       command: ["sh", "-c", "chown 65534:65534 /data && chmod 0775 /data"]
       securityContext:
@@ -42,7 +42,7 @@ spec:
           memory: 32Mi
   containers:
     - name: writer
-      image: busybox:1.36
+      image: ghcr.io/doorcloud/formation/busybox:1.36
       imagePullPolicy: IfNotPresent
       command: ["sleep", "3600"]
       securityContext:

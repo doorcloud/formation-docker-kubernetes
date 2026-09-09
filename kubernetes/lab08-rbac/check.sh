@@ -138,11 +138,11 @@ is_root_denied() {
   [[ "$r" == "CreateContainerConfigError" ]]
 }
 wait_until "nginx-root-interdit CreateContainerConfigError" is_root_denied
-ok "nginx:1.27-alpine + runAsNonRoot → CreateContainerConfigError"
+ok "ghcr.io/doorcloud/formation/nginx:1.27-alpine + runAsNonRoot → CreateContainerConfigError"
 
 kc apply -n "$NS" -f pod-nginx-unprivileged.yaml >/dev/null
 kc wait --for=condition=Ready pod/nginx-unprivileged -n "$NS" --timeout="${TIMEOUT}s"
-ok "nginxinc/nginx-unprivileged:1.27-alpine Ready (runAsNonRoot + drop ALL + readOnlyRootFilesystem)"
+ok "ghcr.io/doorcloud/formation/nginx-unprivileged:1.27-alpine Ready (runAsNonRoot + drop ALL + readOnlyRootFilesystem)"
 
 # ---------------------------------------------------------------------------
 # 4. PSA restricted : pod privileged refuse a l'admission

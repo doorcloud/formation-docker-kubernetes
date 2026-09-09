@@ -15,7 +15,7 @@
 
 - `kubectl` configuré : `kubectl get nodes` affiche au moins un nœud `Ready`.
 - Terminal : macOS (Terminal / iTerm, zsh ou bash), **Windows : Ubuntu WSL ou Git Bash** (pas PowerShell), Linux : bash.
-- Images utilisées (tags figés, jamais `:latest`) : `nginx:1.27-alpine`, `registry.k8s.io/e2e-test-images/agnhost:2.53`, `busybox:1.36`.
+- Images utilisées (tags figés, jamais `:latest`) : `ghcr.io/doorcloud/formation/nginx:1.27-alpine`, `registry.k8s.io/e2e-test-images/agnhost:2.53`, `ghcr.io/doorcloud/formation/busybox:1.36`.
 
 Depuis la racine du dépôt cloné :
 
@@ -64,7 +64,7 @@ kubectl get -n "$NS" pods,svc
 
 **Résultat attendu :** `frontend-…` et `backend-…` `1/1 Running`, pod `intrus` `Running`, Service `backend` ClusterIP port `8080`.
 
-Le frontend est un Nginx (client `wget` inclus dans l'image Alpine). Le backend est `agnhost netexec` sur **8080**. L'`intrus` est un `busybox:1.36` qui dort. Les labels qui comptent pour la suite : `role=frontend`, `role=backend`, `role=intrus`.
+Le frontend est un Nginx (client `wget` inclus dans l'image Alpine). Le backend est `agnhost netexec` sur **8080**. L'`intrus` est un `ghcr.io/doorcloud/formation/busybox:1.36` qui dort. Les labels qui comptent pour la suite : `role=frontend`, `role=backend`, `role=intrus`.
 
 Sondez **depuis** chaque source (c'est l'IP/identité du pod qui sera filtrée). Si le premier `wget` échoue alors que les pods sont Ready, attendez 5–10 s : le CNI (surtout Cilium en remplacement de kube-proxy) programme le ClusterIP avec un léger décalage.
 
@@ -151,7 +151,7 @@ kubectl -n "$NS" exec deploy/frontend -- wget -q -O- -T 3 http://backend:8080
 - **Namespace.** Une NetworkPolicy ne s'applique qu'à **son** namespace. `podSelector: {}` = tous les pods de `$NS`, pas du cluster.
 - **Identité = labels du Pod**, pas le nom du Deployment. Un `kubectl run` sans `role=frontend` est un intrus.
 - **Ingress vs Egress.** Deny Ingress : on n'entre plus. Deny Egress : on ne sort plus, **donc plus de DNS**.
-- **`wget -T 3`** est l'option timeout de **BusyBox** (Alpine / `busybox:1.36`). Ce n'est pas GNU wget. Sur macOS l'hôte n'a souvent pas `timeout(1)` : on n'en a pas besoin, `wget` tourne **dans** le pod.
+- **`wget -T 3`** est l'option timeout de **BusyBox** (Alpine / `ghcr.io/doorcloud/formation/busybox:1.36`). Ce n'est pas GNU wget. Sur macOS l'hôte n'a souvent pas `timeout(1)` : on n'en a pas besoin, `wget` tourne **dans** le pod.
 - Ne jamais poser une NetworkPolicy sur `default` ou `kube-system` (le lab d'origine le faisait — à ne pas reproduire).
 - `metadata.namespace` est **absent** des YAML : on passe toujours `-n "$NS"`.
 

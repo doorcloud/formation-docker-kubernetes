@@ -5,7 +5,7 @@
 ## Objectifs
 
 - Gérer **2 réplicas** nginx via un Deployment (`apps/v1`) avec *readiness probe*.
-- Suivre un rollout, **scaler**, changer d’image (`nginx:1.27-alpine` → `nginx:1.28-alpine`) puis **annuler**.
+- Suivre un rollout, **scaler**, changer d’image (`ghcr.io/doorcloud/formation/nginx:1.27-alpine` → `ghcr.io/doorcloud/formation/nginx:1.28-alpine`) puis **annuler**.
 - Exposer l’application par un Service **ClusterIP** `web-svc` (port 80).
 - Vérifier le DNS CoreDNS (`web-svc` et le FQDN) et les **EndpointSlices**.
 - Comprendre NodePort (lecture) sans l’appliquer.
@@ -13,7 +13,7 @@
 ## Prérequis
 
 - Lab 03 : vous avez un namespace `$NS`. S’il a été supprimé, recréez-le.
-- Images : `nginx:1.27-alpine`, `nginx:1.28-alpine` (tag vérifié sur Docker Hub, 9 sept. 2026), `busybox:1.36`.
+- Images : `ghcr.io/doorcloud/formation/nginx:1.27-alpine`, `ghcr.io/doorcloud/formation/nginx:1.28-alpine` (tag vérifié sur Docker Hub, 9 sept. 2026), `ghcr.io/doorcloud/formation/busybox:1.36`.
 - Le sélecteur du Service **doit** égaler les labels des Pods (`app.kubernetes.io/name=web`). Un écart → 0 endpoint, wget timeout.
 
 ```bash
@@ -52,16 +52,16 @@ kubectl rollout status deploy/web -n "$NS"
 
 ## Étape 3 — Rolling update et historique
 
-Le tag `nginx:1.28-alpine` existe (manifest Docker Hub). On bascule, on observe, on revient.
+Le tag `ghcr.io/doorcloud/formation/nginx:1.28-alpine` existe (manifest Docker Hub). On bascule, on observe, on revient.
 
 ```bash
-kubectl set image deploy/web nginx=nginx:1.28-alpine -n "$NS"
+kubectl set image deploy/web nginx=ghcr.io/doorcloud/formation/nginx:1.28-alpine -n "$NS"
 kubectl rollout status deploy/web -n "$NS"
 kubectl get po -n "$NS" -l app.kubernetes.io/name=web -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.containers[0].image}{"\n"}{end}'
 kubectl rollout history deploy/web -n "$NS"
 ```
 
-**Résultat attendu :** nouveaux Pods en `nginx:1.28-alpine`, *RollingUpdate* (pas de downtime si 2 réplicas). `history` liste les révisions.
+**Résultat attendu :** nouveaux Pods en `ghcr.io/doorcloud/formation/nginx:1.28-alpine`, *RollingUpdate* (pas de downtime si 2 réplicas). `history` liste les révisions.
 
 Annuler (revenir à la révision précédente, donc `1.27-alpine`) :
 
@@ -71,7 +71,7 @@ kubectl rollout status deploy/web -n "$NS"
 kubectl rollout history deploy/web -n "$NS"
 ```
 
-**Résultat attendu :** image de nouveau `nginx:1.27-alpine`. Un ancien Pod peut rester `Terminating` quelques secondes : `get endpointslices` peut alors lister **3** IP le temps du drain — attendez `READY 2/2` avant de conclure. Un `kubectl apply -f deployment.yaml` remettrait aussi le manifeste git (1.27). Ne pas enchaîner `undo` deux fois « pour voir » : le second undo **repart vers 1.28**.
+**Résultat attendu :** image de nouveau `ghcr.io/doorcloud/formation/nginx:1.27-alpine`. Un ancien Pod peut rester `Terminating` quelques secondes : `get endpointslices` peut alors lister **3** IP le temps du drain — attendez `READY 2/2` avant de conclure. Un `kubectl apply -f deployment.yaml` remettrait aussi le manifeste git (1.27). Ne pas enchaîner `undo` deux fois « pour voir » : le second undo **repart vers 1.28**.
 
 ---
 
@@ -95,7 +95,7 @@ VIP ClusterIP : joignable **depuis le cluster**, pas depuis votre laptop (sauf `
 Pod de test **dans le même namespace** (les *search* CoreDNS incluent `$NS.svc.cluster.local`) :
 
 ```bash
-kubectl run dns-test --rm -it --restart=Never --image=busybox:1.36 -n "$NS" -- nslookup web-svc
+kubectl run dns-test --rm -it --restart=Never --image=ghcr.io/doorcloud/formation/busybox:1.36 -n "$NS" -- nslookup web-svc
 ```
 
 **Résultat attendu :** un bloc `Name: web-svc.$NS.svc.cluster.local` + `Address: <ClusterIP>`. busybox interroge aussi les suffixes de *search* (`web-svc.svc.cluster.local`, `web-svc.cluster.local`) et imprime des **NXDOMAIN** : ce n’est **pas** une panne. Le code de sortie peut être ≠ 0 malgré la résolution — lisez `Name:` / `Address:`, ne vous fiez pas à `$?`.
@@ -103,13 +103,13 @@ kubectl run dns-test --rm -it --restart=Never --image=busybox:1.36 -n "$NS" -- n
 FQDN (plus « propre », y compris depuis un autre namespace) :
 
 ```bash
-kubectl run dns-fqdn --rm -it --restart=Never --image=busybox:1.36 -n "$NS" -- nslookup web-svc."$NS".svc.cluster.local
+kubectl run dns-fqdn --rm -it --restart=Never --image=ghcr.io/doorcloud/formation/busybox:1.36 -n "$NS" -- nslookup web-svc."$NS".svc.cluster.local
 ```
 
 HTTP :
 
 ```bash
-kubectl run wget-test --rm -it --restart=Never --image=busybox:1.36 -n "$NS" -- wget -qO- http://web-svc
+kubectl run wget-test --rm -it --restart=Never --image=ghcr.io/doorcloud/formation/busybox:1.36 -n "$NS" -- wget -qO- http://web-svc
 ```
 
 **Résultat attendu :** HTML nginx. Équivalent FQDN : `http://web-svc.$NS.svc.cluster.local`.
@@ -149,7 +149,7 @@ kubectl delete -n "$NS" -f service.yaml -f deployment.yaml
 # kubectl delete ns "$NS"
 ```
 
-Vérification automatique (2 réplicas Ready, 2 endpoints, HTTP 200 via `curlimages/curl:8.10.1`) :
+Vérification automatique (2 réplicas Ready, 2 endpoints, HTTP 200 via `ghcr.io/doorcloud/formation/curl:8.10.1`) :
 
 ```bash
 ./check.sh

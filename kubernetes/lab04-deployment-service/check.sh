@@ -79,7 +79,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: curl
-      image: curlimages/curl:8.10.1
+      image: ghcr.io/doorcloud/formation/curl:8.10.1
       resources:
         requests:
           cpu: 10m
@@ -111,7 +111,7 @@ done
 code="$(kc logs -n "$NS" "$curl_pod" 2>/dev/null || true)"
 [[ "$phase" == "Succeeded" && "$code" == "200" ]] \
   || fail "HTTP via curl pod: phase=${phase} code=${code} (attendu Succeeded/200)"
-ok "HTTP 200 via curlimages/curl:8.10.1 -> http://web-svc"
+ok "HTTP 200 via ghcr.io/doorcloud/formation/curl:8.10.1 -> http://web-svc"
 
 ok "lab04-deployment-service termine"
 exit 0

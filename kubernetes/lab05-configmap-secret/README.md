@@ -6,14 +6,14 @@
 
 - Externaliser la conf Redis : ConfigMap **littérale** + **fichier** `redis.conf`.
 - Créer un Secret Opaque (`DB_PASSWORD=ChangeMe-lab`) et voir que le **base64 n’est pas un chiffrement**.
-- Monter le ConfigMap en fichier et le Secret en variable d’environnement dans `redis:7-alpine`.
+- Monter le ConfigMap en fichier et le Secret en variable d’environnement dans `ghcr.io/doorcloud/formation/redis:7-alpine`.
 - Vérifier avec `exec` : `env`, `cat` du fichier monté, `redis-cli ping` → `PONG`.
 - Générer du YAML sans l’envoyer : `kubectl create … --dry-run=client -o yaml`.
 
 ## Prérequis
 
 - Labs 03–04 : namespace `$NS` existant (sinon créez-le).
-- Image : `redis:7-alpine` (tag figé). Mot de passe d’exemple **uniquement pédagogique** : `ChangeMe-lab` (jamais un vrai secret dans git).
+- Image : `ghcr.io/doorcloud/formation/redis:7-alpine` (tag figé). Mot de passe d’exemple **uniquement pédagogique** : `ChangeMe-lab` (jamais un vrai secret dans git).
 
 ```bash
 export NS=lab-<prenom>
