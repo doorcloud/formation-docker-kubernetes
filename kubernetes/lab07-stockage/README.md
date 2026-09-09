@@ -8,7 +8,7 @@
 - Constater qu’`emptyDir` **meurt avec le Pod**.
 - Déclarer un PVC **1 Gi**, `ReadWriteOnce`, **sans** `storageClassName` (classe **par défaut** du cluster).
 - Écrire `/data/hello.txt`, supprimer le Pod, le recréer, **retrouver le fichier**.
-- Lire `kubectl describe pvc`, `kubectl get pv`, la *reclaim policy* et `WaitForFirstConsumer`.
+- Lire `kubectl describe pvc`, `kubectl get pv`, la *reclaim policy* et le `volumeBindingMode` (`Immediate` sur DKS, `WaitForFirstConsumer` sur kind).
 
 ## Prérequis
 
@@ -38,17 +38,17 @@ kubectl get storageclass
 | Cluster | Nom typique | Provisioner |
 |---|---|---|
 | kind (entraînement) | `standard` | `rancher.io/local-path` |
-| DKS (salle) | souvent `door-ssd` | CSI Trident (iSCSI, RWO) |
+| DKS (salle) | `door-ssd` (défaut) | CSI NetApp Trident 25.02 (`ontap-san`, bloc, RWO) ; `door-file` = `ontap-nas` (fichier, RWX) |
 
 Ne copiez **pas** le nom dans le manifeste : laissez le cluster choisir. Si plusieurs classes existent (`door-file` en NFS/RWX sur DKS, etc.), seul le `(default)` est utilisé ici.
 
 Repérez aussi **`VOLUMEBINDINGMODE`** et **`RECLAIMPOLICY`** :
 
 - `WaitForFirstConsumer` : le PVC reste `Pending` **tant qu’aucun Pod** ne le monte (le scheduler choisit le nœud d’abord). Ce n’est **pas** un échec.
-- `Immediate` : le volume est provisionné tout de suite, parfois sur le « mauvais » nœud.
+- `Immediate` : le volume est provisionné tout de suite (sur un stockage réseau comme Trident, le nœud n’a pas d’importance).
 - `Delete` : supprimer le PVC supprime (en général) le PV. `Retain` : le PV passe `Released` et garde les données.
 
-Sur kind d’entraînement : `standard` + `WaitForFirstConsumer` + `Delete`.
+Sur kind d’entraînement : `standard` + `WaitForFirstConsumer` + `Delete`. Sur DKS (vérifié 09/09/2026) : `door-ssd` + **`Immediate`** + `Delete`, `ALLOWVOLUMEEXPANSION true`.
 
 ---
 
@@ -86,7 +86,7 @@ kubectl get pvc donnees -n "$NS"
 kubectl describe pvc donnees -n "$NS"
 ```
 
-**Résultat attendu si `WaitForFirstConsumer` :** `Pending`, événement du type *waiting for first consumer*. **N’attendez pas** Bound ici.
+**Résultat attendu sur DKS (`door-ssd`, `Immediate`) :** `Bound` en quelques secondes, un PV `pvc-…` apparaît dans `kubectl get pv`. **Sur kind (`WaitForFirstConsumer`) :** `Pending`, événement *waiting for first consumer* — normal, **n’attendez pas** Bound ici. Un PVC `Pending` **sur DKS** signale au contraire que le CSI Trident n’est pas encore prêt (cluster trop neuf : prévenez le formateur).
 
 ```bash
 kubectl apply -n "$NS" -f pod-pvc.yaml
@@ -145,7 +145,7 @@ kind `standard` → `Delete`. Vérifiez sur DKS avec `kubectl get sc` / `kubectl
 
 ## Pièges
 
-- **PVC `Pending` sans Pod** avec `WaitForFirstConsumer` : comportement **normal**, pas une StorageClass cassée.
+- **PVC `Pending` sans Pod** avec `WaitForFirstConsumer` (kind) : comportement **normal**, pas une StorageClass cassée. Avec `Immediate` (DKS) : `Pending` = CSI pas prêt, lisez `kubectl describe pvc`.
 - **Forcer `storageClassName: standard`** dans le YAML casse le lab sur DKS (la classe ne s’appelle pas `standard`). Laissez le champ absent.
 - **`hostPath`** : hors sujet ici, et souvent **interdit** (PSA / politiques cluster). Ne l’utilisez pas en salle.
 - **RWO vs RWX** : un volume RWO n’est pas partageable entre deux nœuds. Deux Pods sur le même nœud peuvent parfois le monter ; ne comptez pas dessus. Un seul Pod dans ce lab.
@@ -171,5 +171,5 @@ Vérification automatique :
 ## Pour aller plus loin
 
 - `emptyDir.medium: Memory` : emptyDir en tmpfs (RAM du nœud).
-- StatefulSet + `volumeClaimTemplates` : un PVC **par** replica (lab bonus 11).
+- StatefulSet + `volumeClaimTemplates` : un PVC **par** replica (piste bonus, pas de lab dans ce dépôt).
 - `kubectl get sc -o yaml` : `allowVolumeExpansion`, `mountOptions`, paramètres CSI (noms variables selon le cloud — lisez le cluster, ne mémorisez pas GKE/EBS).

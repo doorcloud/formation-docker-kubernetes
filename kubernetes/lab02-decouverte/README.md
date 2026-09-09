@@ -56,7 +56,7 @@ kubectl version
 
 **Résultat attendu :** au moins une ligne **Ready**. `-o wide` ajoute INTERNAL-IP, OS-IMAGE, KERNEL-VERSION, CONTAINER-RUNTIME (souvent `containerd`).
 
-`kubectl version` montre le client **et** le serveur. Ne plus utiliser `--short` (flag retiré). L’écart client/serveur autorisé est d’**une mineure** : un client 1.36 parle à un serveur 1.37.
+`kubectl version` montre le client **et** le serveur. Ne plus utiliser `--short` (flag retiré). L’écart client/serveur autorisé est d’**une mineure** : sur DKS (serveur **v1.32.4**) visez un client 1.31–1.33 ; un client plus récent (1.37) fonctionne pour les labs mais affiche un avertissement de skew.
 
 ---
 

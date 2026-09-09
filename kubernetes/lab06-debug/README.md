@@ -141,7 +141,7 @@ kubectl top nodes
 kubectl top pods -n "$NS"
 ```
 
-**Résultat attendu :** soit un tableau CPU/RAM, soit `Metrics API not available`. **Les deux sont valides.** `kubectl top` parle à **metrics-server**. Sur kind d’entraînement il est souvent **absent** ; sur un cluster DKS il peut être installé. Ce n’est pas un échec du lab.
+**Résultat attendu :** sur DKS, un tableau CPU/RAM (metrics-server `door-metrics-server` est fourni par la plateforme) ; sur kind, `Metrics API not available`. **Les deux sont valides.** `kubectl top` parle à **metrics-server**. Sur kind d’entraînement il est souvent **absent** ; sur un cluster DKS il peut être installé. Ce n’est pas un échec du lab.
 
 ---
 

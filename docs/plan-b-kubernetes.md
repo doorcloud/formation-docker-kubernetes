@@ -1,6 +1,6 @@
 # Plan B — pas de cluster DKS personnel
 
-Le chemin normal est le Lab 1 : un cluster DKS **à vous**, créé depuis [door.cloud](https://door.cloud) (voir [dks-creer-cluster.md](dks-creer-cluster.md) et [prerequis-kubernetes.md](prerequis-kubernetes.md)). Si vous ne pouvez pas créer le cluster, ou si `kubectl` n’atteint pas l’API, suivez **dans l’ordre** les options ci-dessous et prévenez le formateur.
+Le chemin normal est le Lab 1 : le cluster DKS **de votre binôme**, créé la veille par le formateur depuis [door.cloud](https://door.cloud) (voir [dks-creer-cluster.md](dks-creer-cluster.md) et [prerequis-kubernetes.md](prerequis-kubernetes.md)). Si vous ne pouvez pas récupérer le kubeconfig, ou si `kubectl` n’atteint pas l’API, suivez **dans l’ordre** les options ci-dessous et prévenez le formateur.
 
 ## a) Cluster partagé du formateur + namespace `lab-<prenom>`
 
@@ -36,7 +36,8 @@ command -v kind >/dev/null || {
   echo "Installez kind, puis relancez."
 }
 
-kind create cluster --name formation-test --image kindest/node:v1.37.0
+# 1.32.x = même mineure que DKS (digest : https://github.com/kubernetes-sigs/kind/releases) ; v1.37.0 fonctionne aussi
+kind create cluster --name formation-test --image kindest/node:v1.32.11
 kubectl cluster-info --context kind-formation-test
 export NS=lab-<prenom>
 kubectl create namespace "$NS"
@@ -49,8 +50,8 @@ Limites **par rapport à DKS** — à avoir en tête en salle :
 | Sujet | kind (CNI kindnet, défaut) | DKS |
 |-------|----------------------------|-----|
 | Service `LoadBalancer` | Reste souvent `Pending` (pas de cloud controller) | Adresse externe réelle |
-| NetworkPolicy | **Non appliquées** par kindnet | Appliquées (Cilium) |
-| StorageClass | `standard` (local-path) | StorageClass par défaut DKS (Lab 7) |
+| NetworkPolicy | Dépend de la version de kind (kindnet seul : **non appliquées** ; kind récent embarque kube-network-policies) — croyez le test `wget -T 3` | Appliquées (Cilium 1.18) |
+| StorageClass | `standard` (local-path, `WaitForFirstConsumer`) | `door-ssd` (Trident, `Immediate`) — Lab 7 |
 | Nœuds / quota | Un nœud local, disque de votre laptop | Quota projet Door |
 | Lab 1 (console Door) | Impossible à rejouer | Objectif du lab |
 

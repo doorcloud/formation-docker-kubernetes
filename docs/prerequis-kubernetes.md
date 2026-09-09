@@ -9,7 +9,7 @@ kubectl version --client
 helm version
 ```
 
-`kubectl` doit être dans la même **mineure ± 1** que le cluster (DKS en 1.35–1.37). La version client stable au moment de la rédaction est lue ici : [https://dl.k8s.io/release/stable.txt](https://dl.k8s.io/release/stable.txt) (méthode officielle Kubernetes).
+`kubectl` doit être dans la même **mineure ± 1** que le cluster. DKS est en **1.32.4** : installez un kubectl **1.31 à 1.33** (idéal **1.32.x**). Ne prenez pas `stable.txt` (= 1.37 en septembre 2026, hors skew) : utilisez [https://dl.k8s.io/release/stable-1.32.txt](https://dl.k8s.io/release/stable-1.32.txt), la méthode officielle Kubernetes pour cibler une mineure.
 
 Si vous **n’avez pas les droits administrateur**, lisez [plan-b-kubernetes.md](plan-b-kubernetes.md) et prévenez le formateur.
 
@@ -25,9 +25,9 @@ Sans ce compte, le Lab 1 (création du cluster DKS) est impossible. Le formateur
 
 ## kubectl
 
-Documentation officielle : [Installer kubectl](https://kubernetes.io/docs/tasks/tools/). Toujours la version pointée par `https://dl.k8s.io/release/stable.txt` (ou le dépôt `pkgs.k8s.io` de la mineure courante), pas un paquet Ubuntu/Debian périmé.
+Documentation officielle : [Installer kubectl](https://kubernetes.io/docs/tasks/tools/). Toujours la version pointée par `https://dl.k8s.io/release/stable-1.32.txt` (ou le dépôt `pkgs.k8s.io` de la mineure **v1.32**), pas un paquet Ubuntu/Debian périmé ni le `stable.txt` générique (1.37, trop récent pour un serveur 1.32).
 
-**Docker Desktop** (macOS et Windows) livre déjà un binaire `kubectl`. S’il apparaît dans votre terminal Unix (`command -v kubectl`) et que `kubectl version --client` affiche une 1.35–1.37, vous pouvez le garder. Sinon, installez le binaire officiel comme ci-dessous — et, sous Windows, **dans Ubuntu WSL**, pas dans PowerShell.
+**Docker Desktop** (macOS et Windows) livre déjà un binaire `kubectl`. S’il apparaît dans votre terminal Unix (`command -v kubectl`) et que `kubectl version --client` affiche une 1.31–1.33, vous pouvez le garder (Docker Desktop 2026 livre souvent un kubectl 1.3x plus récent : vérifiez). Sinon, installez le binaire officiel comme ci-dessous — et, sous Windows, **dans Ubuntu WSL**, pas dans PowerShell.
 
 ### macOS (Homebrew)
 
@@ -36,14 +36,14 @@ brew install kubectl
 kubectl version --client
 ```
 
-Équivalent : `brew install kubernetes-cli`.
+Équivalent : `brew install kubernetes-cli`. Homebrew installe la **dernière** mineure (1.37 en septembre 2026), soit 5 mineures au-dessus du serveur DKS 1.32 : les labs fonctionnent (kubectl affiche seulement un avertissement de skew), mais si vous voulez respecter la règle ± 1, préférez la méthode `curl` ci-dessous avec `stable-1.32.txt`.
 
 ### macOS (curl, méthode officielle)
 
 Apple Silicon :
 
 ```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/arm64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable-1.32.txt)/bin/darwin/arm64/kubectl"
 chmod +x ./kubectl
 sudo mv ./kubectl /usr/local/bin/kubectl
 kubectl version --client
@@ -57,15 +57,15 @@ Les labs se tapent dans **Ubuntu WSL**. N’installez pas kubectl « pour Window
 
 Ouvrez **Ubuntu** (menu Démarrer), puis **une** des deux méthodes.
 
-**Dépôt apt officiel** (`pkgs.k8s.io`, mineure courante — ici v1.37, à aligner sur [stable.txt](https://dl.k8s.io/release/stable.txt) si la mineure a bougé) :
+**Dépôt apt officiel** (`pkgs.k8s.io`, mineure **v1.32** = celle de DKS ; v1.33 acceptable) :
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
 sudo mkdir -p -m 755 /etc/apt/keyrings
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.37/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.37/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update
 sudo apt-get install -y kubectl
@@ -75,7 +75,7 @@ kubectl version --client
 **curl** (amd64 ; `arm64` si votre WSL est ARM) :
 
 ```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable-1.32.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 kubectl version --client
 ```
@@ -86,16 +86,16 @@ Si Docker Desktop a déjà injecté `kubectl` dans WSL (intégration Ubuntu), `k
 
 **Debian / Ubuntu** : même dépôt `pkgs.k8s.io` que le bloc WSL ci-dessus, puis `sudo apt-get install -y kubectl`.
 
-**Fedora / RHEL** (dépôt RPM officiel, mineure v1.37 à aligner sur stable.txt) :
+**Fedora / RHEL** (dépôt RPM officiel, mineure **v1.32** = celle de DKS) :
 
 ```bash
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.37/rpm/
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/
 enabled=1
 gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.37/rpm/repodata/repomd.xml.key
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/repodata/repomd.xml.key
 EOF
 sudo dnf install -y kubectl
 kubectl version --client
@@ -104,7 +104,7 @@ kubectl version --client
 Alternative curl Linux amd64 :
 
 ```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable-1.32.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 ```
 

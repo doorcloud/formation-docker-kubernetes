@@ -22,10 +22,10 @@ Depuis la racine du dépôt cloné :
 ```bash
 cd kubernetes/lab09-networkpolicy
 export NS=lab-<prenom>
-kubectl create namespace "$NS"
+kubectl get namespace "$NS" >/dev/null 2>&1 || kubectl create namespace "$NS"
 ```
 
-Remplacez `<prenom>` par le vôtre **en minuscules, sans accent** (ex. `lab-aliou`). Toutes les commandes passent `-n "$NS"`. Ne touchez jamais `default` ni `kube-system`.
+Remplacez `<prenom>` par le vôtre **en minuscules, sans accent** (ex. `lab-fatou`). Le namespace existe déjà si vous venez du lab 8 : la commande ci-dessus ne le recrée pas. Toutes les commandes passent `-n "$NS"`. Ne touchez jamais `default` ni `kube-system`.
 
 > **macOS / Windows WSL / Linux**  
 > Le kubeconfig est en général `~/.kube/config`. Sous WSL, installez `kubectl` **dans** Linux et copiez le kubeconfig dans le home Linux (`~/.kube/config`), pas sous `/mnt/c`.  

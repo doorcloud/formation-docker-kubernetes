@@ -25,7 +25,7 @@ kubectl get namespace "$NS" >/dev/null 2>&1 || kubectl create namespace "$NS"
 ```
 
 > **macOS / Linux**
-> Kubeconfig : `~/.kube/config`. `kubectl create token` nécessite un client **1.24+** (vous êtes en 1.36/1.37).
+> Kubeconfig : `~/.kube/config`. `kubectl create token` nécessite un client **1.24+** (le kubectl recommandé pour DKS, 1.31–1.33, convient ; vérifiez avec `kubectl version`).
 >
 > **Windows (WSL)**
 > Toutes les commandes dans Ubuntu WSL. Le JWT affiché est un **exemple pédagogique** : ne le collez pas dans un chat, un ticket ou un mail.

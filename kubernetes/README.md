@@ -1,6 +1,6 @@
 # Labs Kubernetes (Jours 2 et 3)
 
-Parcours **Kubernetes sur DKS** (Door Kubernetes Service), dans le même dépôt que le Jour 1 Docker. Cluster pédagogique : un cluster DKS par stagiaire (Lab 1), créé depuis la console [door.cloud](https://door.cloud). Mode d’exposition **public** : sans cela, l’API n’est pas joignable depuis un laptop.
+Parcours **Kubernetes sur DKS** (Door Kubernetes Service), dans le même dépôt que le Jour 1 Docker. Cluster pédagogique : un cluster DKS **par binôme** (`lab-binome-1` … `lab-binome-5`), créé **la veille par le formateur** depuis la console [door.cloud](https://door.cloud) ; au Lab 1 vous récupérez son kubeconfig et créez votre namespace `lab-<prenom>`. Mode d’exposition **public** : sans cela, l’API n’est pas joignable depuis un laptop.
 
 Les commandes se tapent dans un terminal **Unix** : Terminal macOS, **Ubuntu (WSL)** ou Git Bash, shell Linux. Pas PowerShell, pas `cmd.exe`.
 
@@ -8,7 +8,7 @@ Les commandes se tapent dans un terminal **Unix** : Terminal macOS, **Ubuntu (WS
 
 | Dossier | Titre | Durée |
 |---------|-------|-------|
-| `lab01-cluster-dks` | Créer son cluster DKS depuis la console Door, télécharger le kubeconfig, `kubectl get nodes` | 45–60 min |
+| `lab01-cluster-dks` | Retrouver son cluster binôme dans la console Door, télécharger le kubeconfig (API **Public**), `kubectl get nodes`, créer `lab-<prenom>` | 45 min |
 | `lab02-decouverte` | Découvrir le cluster : api-resources, namespaces, kube-system (lecture seule), StorageClass, CNI | 20 min |
 | `lab03-namespace-pod` | Namespace `lab-<prenom>`, Pod multi-conteneurs, `exec`, `logs` | 25 min |
 | `lab04-deployment-service` | Deployment 2 replicas, rolling update/rollback, Service ClusterIP, DNS CoreDNS | 35 min |
@@ -21,7 +21,7 @@ Les commandes se tapent dans un terminal **Unix** : Terminal macOS, **Ubuntu (WS
 
 Chaque répertoire `kubernetes/labNN-…/` contient un `README.md` (source de vérité des commandes), les manifests YAML, et — sauf le Lab 1, **manuel** — un `check.sh`.
 
-Hors salle (README seulement, pas en séance) : `lab11-statefulset`, `lab12-quota-limitrange`, exposition externe (LoadBalancer / Gateway API si disponible sur DKS).
+Pistes « pour aller plus loin » (pas de dossier dans ce dépôt, évoquées en cours) : StatefulSet, ResourceQuota / LimitRange, exposition externe (Service `LoadBalancer` via kube-vip / Gateway API si disponible sur DKS).
 
 ## Conventions
 
@@ -84,7 +84,7 @@ Pas de cluster, ou API injoignable : [plan B](../docs/plan-b-kubernetes.md) et p
 
 ## Nettoyage
 
-En fin de Jour 3, **supprimez votre cluster DKS** depuis la console (Lab 1). Pour les namespaces `lab-*` restants sur un cluster partagé :
+En fin de Jour 3, le **formateur** (Super Admin) supprime les clusters binômes depuis la console : un **Member** ne peut pas le faire. Avant cela, nettoyez vos namespaces `lab-*` :
 
 ```bash
 bash scripts/k8s-cleanup-all.sh

@@ -54,7 +54,7 @@ kubectl wait -n "$NS" --for=condition=Ready pod/deux-conteneurs --timeout=120s
 kubectl get pod -n "$NS" -o wide
 ```
 
-**Résultat attendu :** `2/2` Ready, STATUS Running, une IP de Pod. Au premier pull, attendez (rate-limit Docker Hub : `docker login` aide).
+**Résultat attendu :** `2/2` Ready, STATUS Running, une IP de Pod. Au premier pull, attendez : depuis Abidjan, Docker Hub descend parfois à quelques dizaines de KiB/s et le kubelet télécharge les images **une par une** — c’est pour cela que les labs utilisent le miroir `ghcr.io` (voir [docs/images-registres.md](../../docs/images-registres.md)). `docker login` ne change rien ici : le pull est fait par le nœud, pas par votre laptop.
 
 ---
 

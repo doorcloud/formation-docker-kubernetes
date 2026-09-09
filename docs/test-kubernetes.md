@@ -41,14 +41,20 @@ kind delete cluster --name formation-test
 
 ## 2. Second cluster kind + Cilium (NetworkPolicy)
 
-kindnet **n’applique pas** les `NetworkPolicy`. Pour le Lab 9, un cluster **sans CNI par défaut**, puis Cilium (Helm 4), comme le README de `kubernetes/lab09-networkpolicy` (détail des values = agent labs).
+kindnet seul **n’applique pas** les `NetworkPolicy` (les kind récents embarquent `kube-network-policies`, qui peut les appliquer : testez plutôt que de supposer). Pour une démo Lab 9 garantie, un cluster **sans CNI par défaut**, puis Cilium (Helm 4). Le fichier `kind-netpol.yaml` et les values Cilium **ne sont pas dans le dépôt** : le formateur les garde en local (schéma ci-dessous).
 
 Schéma :
 
 ```bash
-# cluster dédié, disableDefaultCNI: true (fichier kind config du lab 09)
-kind create cluster --name formation-netpol --config kubernetes/lab09-networkpolicy/kind-netpol.yaml
-# helm install cilium : commandes exactes dans le README du lab 09
+# kind-netpol.yaml (local, hors dépôt) :
+#   kind: Cluster
+#   apiVersion: kind.x-k8s.io/v1alpha4
+#   networking: { disableDefaultCNI: true, kubeProxyMode: none }
+kind create cluster --name formation-netpol --config kind-netpol.yaml --image kindest/node:v1.32.11
+helm repo add cilium https://helm.cilium.io && helm repo update
+helm install cilium cilium/cilium --version 1.18.4 -n kube-system \
+  --set kubeProxyReplacement=true \
+  --set k8sServiceHost=formation-netpol-control-plane --set k8sServicePort=6443
 kubectl --context kind-formation-netpol -n kube-system get pods
 bash kubernetes/lab09-networkpolicy/check.sh
 kind delete cluster --name formation-netpol

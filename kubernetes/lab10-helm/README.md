@@ -22,7 +22,7 @@ Depuis la racine du dépôt cloné :
 ```bash
 cd kubernetes/lab10-helm
 export NS=lab-<prenom>
-kubectl create namespace "$NS"
+kubectl get namespace "$NS" >/dev/null 2>&1 || kubectl create namespace "$NS"
 helm version
 ```
 

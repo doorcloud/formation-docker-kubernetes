@@ -42,6 +42,6 @@ les pulls par nœud (`serializeImagePulls: true`) : une image lente bloque toute
   qui met toutes les images en cache sur chaque nœud).
 - Ajouter une image : une ligne dans `kubernetes/images.txt`, push sur `main`, le workflow la
   copie ; vérifier que le package est **public** dans GitHub → Packages (par défaut il est privé).
-- Un cluster DKS neuf met 10 à 60 min à finir d'installer la plateforme Door (images tirées
+- Un cluster DKS neuf met **60 à 90 min** après `Provisioned` à finir d'installer la plateforme Door (door-system, door-apigateway, door-monitoring, Trident ; images tirées
   depuis Docker Hub) : créer les clusters **la veille**, et vérifier avant le lab 07 que
   Trident est prêt : `kubectl -n kube-system get pods -l app=controller.csi.trident.netapp.io`.
