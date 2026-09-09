@@ -34,7 +34,7 @@ jobs:
           grep -vE '^\s*(#|$)' kubernetes/images.txt | while read -r src dst; do
             echo "== $src -> $dst"
             docker buildx imagetools create --tag "$dst" "$src"
-            docker buildx imagetools inspect "$dst" | head -5
+            docker buildx imagetools inspect "$dst" >/dev/null
           done
 
       - name: Verifier le pull anonyme
