@@ -1,0 +1,12 @@
+.git
+.gitignore
+README.md
+check.sh
+bad
+bonus-multistage
+**/__pycache__
+*.pyc
+*.md
+.DS_Store
+.dockerignore
+Dockerfile

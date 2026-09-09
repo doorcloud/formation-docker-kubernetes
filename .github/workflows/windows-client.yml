@@ -1,0 +1,378 @@
+---
+# Hygiene des clones Windows : CRLF, BOM UTF-8, copier-coller des labs,
+# syntaxe des scripts PowerShell stagiaires.
+#
+# Ce runner GitHub (windows-latest) fournit Docker en mode *conteneurs
+# Windows*. Il ne reproduit PAS Docker Desktop + WSL2 (kernel Linux,
+# bind mounts sous ~/, AppArmor). Les 7 labs (check.sh) s'executent
+# donc dans ci.yml sur ubuntu-latest (chemin Ubuntu natif).
+#
+# checkout : reglages par defaut (core.autocrlf=true sur les runners
+# Windows). C'est voulu : on verifie que .gitattributes (eol=lf)
+# protege le clone, pas un checkout force en LF.
+
+name: Windows client hygiene
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  windows-hygiene:
+    name: windows-hygiene
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (autocrlf = defaut du runner Windows)
+        uses: actions/checkout@v4
+
+      - name: Afficher core.autocrlf et un echantillon EOL
+        run: |
+          $ac = git config --get core.autocrlf 2>$null
+          if (-not $ac) { $ac = '(unset)' }
+          Write-Host "git config core.autocrlf = $ac"
+          Write-Host '--- git ls-files --eol (40 premieres lignes) ---'
+          git ls-files --eol | Select-Object -First 40
+
+      - name: Verifier que .gitattributes existe a la racine
+        run: |
+          if (-not (Test-Path -LiteralPath '.gitattributes')) {
+            Write-Host (
+              '::error::.gitattributes absent a la racine du depot. ' +
+              'Sans eol=lf, un clone Windows (autocrlf=true) convertit ' +
+              'les .sh / Dockerfile en CRLF et casse les labs WSL.'
+            )
+            exit 1
+          }
+          Write-Host 'OK : .gitattributes present a la racine.'
+
+      - name: Echec si CRLF ou BOM UTF-8 dans docker/ et scripts/
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          function Test-IsHygieneTarget {
+            param([string]$GitPath)
+            $leaf = Split-Path -Path $GitPath -Leaf
+            if ($leaf -like '*.ps1') { return $false }
+            if ($leaf -eq '.env.example') { return $true }
+            if ($leaf -like 'Dockerfile*') { return $true }
+            $extOk = @(
+              '*.sh', '*.yml', '*.yaml', '*.conf',
+              '*.php', '*.py', '*.json', '*.md'
+            )
+            foreach ($pat in $extOk) {
+              if ($leaf -like $pat) { return $true }
+            }
+            return $false
+          }
+
+          $dirs = @()
+          foreach ($d in @('docker', 'scripts')) {
+            if (Test-Path -LiteralPath $d) { $dirs += $d }
+          }
+          if ($dirs.Count -eq 0) {
+            Write-Host 'Pas de docker/ ni scripts/ : skip scan CRLF/BOM.'
+            exit 0
+          }
+
+          $listed = git -c core.quotePath=false ls-files -- @dirs
+          $files = @($listed | Where-Object { Test-IsHygieneTarget $_ })
+          Write-Host ("Fichiers suivis a scanner : {0}" -f $files.Count)
+
+          $bad = New-Object System.Collections.Generic.List[string]
+          foreach ($rel in $files) {
+            if (-not (Test-Path -LiteralPath $rel)) { continue }
+            $bytes = [System.IO.File]::ReadAllBytes(
+              (Resolve-Path -LiteralPath $rel).Path
+            )
+            $reasons = @()
+            if (
+              $bytes.Length -ge 3 -and
+              $bytes[0] -eq 0xEF -and
+              $bytes[1] -eq 0xBB -and
+              $bytes[2] -eq 0xBF
+            ) {
+              $reasons += 'BOM UTF-8 (EF BB BF)'
+            }
+            $latin = [System.Text.Encoding]::GetEncoding(
+              'ISO-8859-1'
+            ).GetString($bytes)
+            if ($latin.Contains("`r`n")) {
+              $reasons += 'CRLF (octets 0D 0A)'
+            }
+            if ($reasons.Count -gt 0) {
+              $msg = "${rel} : " + ($reasons -join ', ')
+              [void]$bad.Add($msg)
+              Write-Host "::error file=$rel::$msg"
+            }
+          }
+
+          if ($bad.Count -gt 0) {
+            Write-Host ''
+            Write-Host 'ECHEC : fichiers avec CRLF et/ou BOM :'
+            $bad | ForEach-Object { Write-Host "  - $_" }
+            Write-Host (
+              'Corriger via .gitattributes (* text=auto eol=lf), ' +
+              'pas en desactivant autocrlf sur le runner.'
+            )
+            exit 1
+          }
+          Write-Host (
+            "OK : $($files.Count) fichier(s) en LF, sans BOM " +
+            '(preuve que .gitattributes protege un clone Windows).'
+          )
+
+      - name: Blocs bash/sh sans ponctuation typographique
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $targets = New-Object System.Collections.Generic.List[string]
+          if (Test-Path -LiteralPath 'docker') {
+            Get-ChildItem -Path 'docker' -Directory |
+              Where-Object { $_.Name -like 'lab*' } |
+              ForEach-Object {
+                $readme = Join-Path $_.FullName 'README.md'
+                if (Test-Path -LiteralPath $readme) {
+                  [void]$targets.Add($readme)
+                }
+              }
+          }
+          if (Test-Path -LiteralPath 'docs') {
+            Get-ChildItem -Path 'docs' -Filter '*.md' -File |
+              ForEach-Object { [void]$targets.Add($_.FullName) }
+          }
+
+          if ($targets.Count -eq 0) {
+            Write-Host (
+              'Aucun docker/lab*/README.md ni docs/*.md : skip.'
+            )
+            exit 0
+          }
+
+          $badNames = @{
+            ([char]0x2018) = 'U+2018 (guillemet simple ouvrant)'
+            ([char]0x2019) = 'U+2019 (apostrophe typographique)'
+            ([char]0x201C) = 'U+201C (guillemet double ouvrant)'
+            ([char]0x201D) = 'U+201D (guillemet double fermant)'
+            ([char]0x2014) = 'U+2014 (tiret cadratin)'
+            ([char]0x2013) = 'U+2013 (tiret demi-cadratin)'
+            ([char]0x00A0) = 'U+00A0 (espace inseparable / NBSP)'
+          }
+          $badChars = [char[]]@($badNames.Keys)
+
+          $fails = New-Object System.Collections.Generic.List[string]
+          $blocks = 0
+          foreach ($path in $targets) {
+            $bytes = [System.IO.File]::ReadAllBytes($path)
+            $off = 0
+            if (
+              $bytes.Length -ge 3 -and
+              $bytes[0] -eq 0xEF -and
+              $bytes[1] -eq 0xBB -and
+              $bytes[2] -eq 0xBF
+            ) {
+              $off = 3
+            }
+            $text = [System.Text.Encoding]::UTF8.GetString(
+              $bytes, $off, $bytes.Length - $off
+            )
+            $rel = $path
+            $rootPath = (Get-Location).Path
+            if ($rel.StartsWith(
+              $rootPath,
+              [StringComparison]::OrdinalIgnoreCase
+            )) {
+              $rel = $rel.Substring($rootPath.Length).TrimStart('\', '/')
+            }
+            $rel = $rel -replace '\\', '/'
+
+            $inBlock = $false
+            $startLine = 0
+            $buf = New-Object System.Collections.Generic.List[string]
+            $n = 0
+            foreach ($line in ($text -split '\r?\n')) {
+              $n++
+              if (-not $inBlock) {
+                if ($line -match '^```(bash|sh)(\s|$)') {
+                  $inBlock = $true
+                  $startLine = $n
+                  $buf.Clear()
+                }
+                continue
+              }
+              if ($line -match '^```\s*$') {
+                $blocks++
+                $body = $buf -join "`n"
+                $idx = $body.IndexOfAny($badChars)
+                while ($idx -ge 0) {
+                  $ch = $body[$idx]
+                  $label = $badNames[$ch]
+                  $msg = (
+                    "${rel}:${startLine} : $label dans un bloc " +
+                    '```bash / ```sh (casse le copier-coller)'
+                  )
+                  [void]$fails.Add($msg)
+                  Write-Host "::error file=$rel,line=$startLine::$msg"
+                  $next = $idx + 1
+                  if ($next -ge $body.Length) { break }
+                  $idx = $body.IndexOfAny($badChars, $next)
+                }
+                $inBlock = $false
+                continue
+              }
+              [void]$buf.Add($line)
+            }
+          }
+
+          if ($fails.Count -gt 0) {
+            Write-Host ''
+            Write-Host 'ECHEC : ponctuation typographique dans un lab :'
+            $fails | ForEach-Object { Write-Host "  - $_" }
+            exit 1
+          }
+          Write-Host (
+            "OK : $blocks bloc(s) bash/sh propres dans " +
+            "$($targets.Count) fichier(s)."
+          )
+
+      - name: prerequis-installation.md recommande WSL et Git Bash
+        run: |
+          $f = 'docs/prerequis-installation.md'
+          if (-not (Test-Path -LiteralPath $f)) {
+            Write-Host "$f absent : skip (pas encore redige)."
+            exit 0
+          }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $f))
+          $off = 0
+          if (
+            $bytes.Length -ge 3 -and
+            $bytes[0] -eq 0xEF -and
+            $bytes[1] -eq 0xBB -and
+            $bytes[2] -eq 0xBF
+          ) { $off = 3 }
+          $t = [System.Text.Encoding]::UTF8.GetString(
+            $bytes, $off, $bytes.Length - $off
+          )
+          $err = New-Object System.Collections.Generic.List[string]
+          if ($t -notmatch 'WSL') {
+            [void]$err.Add("$f ne mentionne pas WSL")
+          }
+          if ($t -notmatch 'Git Bash') {
+            [void]$err.Add("$f ne mentionne pas Git Bash")
+          }
+
+          # PowerShell OK pour Test-Prereqs / install WSL ; interdit
+          # comme terminal des labs.
+          $labPs = @(
+            '(?i)(commandes? des labs?|taper les commandes|' +
+            'saisir les commandes|terminal des labs?).{0,80}PowerShell'
+            '(?i)PowerShell.{0,80}(pour les labs?|comme terminal|' +
+            'pour suivre les labs?)'
+          )
+          $n = 0
+          foreach ($line in ($t -split '\r?\n')) {
+            $n++
+            $isLabPs = $false
+            foreach ($rx in $labPs) {
+              if ($line -match $rx) { $isLabPs = $true; break }
+            }
+            if (-not $isLabPs) { continue }
+            if ($line -match '(?i)(jamais|ne |pas |evite|évite|interdit)') {
+              continue
+            }
+            if ($line -match '(?i)(Test-Prereqs|ExecutionPolicy)') {
+              continue
+            }
+            [void]$err.Add(
+              "${f}:$n recommande PowerShell pour les labs : $line"
+            )
+          }
+
+          if ($err.Count -gt 0) {
+            $err | ForEach-Object { Write-Host "::error::$_" }
+            exit 1
+          }
+          Write-Host (
+            'OK : WSL + Git Bash mentionnes ; PowerShell n est pas ' +
+            'le terminal des labs.'
+          )
+
+      # Informatif : le runner GHA n'est pas un laptop stagiaire.
+      # wsl --status peut etre absent ou sans distro Ubuntu.
+      - name: wsl --status (informatif)
+        continue-on-error: true
+        run: |
+          Write-Host 'Informatif : presence de wsl.exe sur windows-latest'
+          $cmd = Get-Command wsl.exe -ErrorAction SilentlyContinue
+          if (-not $cmd) {
+            Write-Host 'wsl.exe introuvable sur ce runner (attendu possible).'
+            exit 1
+          }
+          Write-Host "wsl.exe = $($cmd.Source)"
+          wsl.exe --status
+          Write-Host '--- wsl -l -v ---'
+          wsl.exe -l -v
+
+      # Docker sur windows-latest = conteneurs Windows, pas les labs
+      # Linux (AppArmor, namespaces host, bind mounts WSL). Les labs
+      # s'executent dans ci.yml sur ubuntu-latest.
+      - name: docker --version (informatif, conteneurs Windows)
+        continue-on-error: true
+        run: |
+          Write-Host (
+            'Informatif : docker du runner Windows (mode conteneurs ' +
+            'Windows). Impossible d executer les labs Linux ici.'
+          )
+          Write-Host 'Les labs tournent dans ci.yml (ubuntu-latest).'
+          docker --version
+
+      - name: Parse-check scripts/windows/*.ps1
+        run: |
+          $root = Join-Path $PWD 'scripts\windows'
+          if (-not (Test-Path -LiteralPath $root)) {
+            Write-Host 'scripts/windows absent : skip parse-check.'
+            exit 0
+          }
+          $files = @(
+            Get-ChildItem -LiteralPath $root -Filter '*.ps1' -File
+          )
+          if ($files.Count -eq 0) {
+            Write-Host 'Aucun .ps1 : skip parse-check.'
+            exit 0
+          }
+          $failed = $false
+          foreach ($f in $files) {
+            $tokens = $null
+            $errs = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              $f.FullName,
+              [ref]$tokens,
+              [ref]$errs
+            )
+            $rel = 'scripts/windows/' + $f.Name
+            if ($null -ne $errs -and $errs.Count -gt 0) {
+              $failed = $true
+              foreach ($e in $errs) {
+                $line = $e.Extent.StartLineNumber
+                Write-Host (
+                  "::error file=$rel,line=$line::$($e.Message)"
+                )
+              }
+            } else {
+              Write-Host "OK parse : $rel"
+            }
+          }
+          if ($failed) { exit 1 }
+          Write-Host "OK : $($files.Count) script(s) PowerShell valides."

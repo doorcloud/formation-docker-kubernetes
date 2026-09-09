@@ -1,0 +1,2 @@
+Ce fichier ne devrait pas se retrouver dans une image de production.
+Sans .dockerignore, COPY . l'embarque.

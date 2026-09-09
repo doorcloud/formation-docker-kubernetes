@@ -1,0 +1,124 @@
+name: CI
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer shellcheck et yamllint
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck yamllint
+
+      - name: ShellCheck
+        run: find . -type f -name '*.sh' -not -path './.git/*' -exec shellcheck {} +
+
+      - name: Exclure Dockerfile pédagogiques (bad)
+        run: find . -path '*/bad/Dockerfile' -exec mv {} {}.hadolint-skip \;
+
+      - name: Hadolint
+        if: hashFiles('**/Dockerfile') != ''
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          recursive: 'true'
+          config: .hadolint.yaml
+
+      - name: Yamllint
+        run: yamllint -c .yamllint.yml .
+
+      - name: docker compose config
+        run: |
+          compose="docker/lab07-compose/docker-compose.yml"
+          if [ -f "$compose" ]; then
+            if [ -f docker/lab07-compose/.env.example ]; then
+              cp docker/lab07-compose/.env.example docker/lab07-compose/.env
+            fi
+            docker compose -f "$compose" config -q
+          else
+            echo "SKIP: ${compose} absent"
+          fi
+
+      - name: Gitleaks
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2 detect -s /repo --no-banner --redact
+
+      - name: Pas de CRLF (hors *.ps1)
+        run: |
+          tmp="$(mktemp)"
+          git ls-files -z | grep -zv '\.ps1$' | xargs -r -0 grep -Il $'\r' > "$tmp" || true
+          if [ -s "$tmp" ]; then
+            echo "Fichiers texte en CRLF interdits (sauf *.ps1) :"
+            cat "$tmp"
+            exit 1
+          fi
+
+      - name: Chaînes interdites
+        run: |
+          # Motifs assemblés pour que ce fichier ne se matche pas lui-même.
+          re="beope"
+          re="${re}n|cba"
+          re="${re}o|boa"
+          re="${re}group|MyP@ssW"
+          re="${re}0rd|ondigitalocea"
+          re="${re}n|witt"
+          re="${re}i"
+          set +e
+          grep -rIiE "$re" --exclude-dir=.git .
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Chaîne interdite trouvée."
+            exit 1
+          fi
+
+  labs:
+    name: labs
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        lab:
+          - lab01-cli
+          - lab02-build
+          - lab03-networking
+          - lab04-volumes
+          - lab05-security
+          - lab06-debug
+          - lab07-compose
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: docker version
+        run: docker version
+
+      - name: AppArmor (informatif)
+        run: sudo aa-status | head -2 || true
+
+      - name: check.sh
+        run: |
+          f="docker/${{ matrix.lab }}/check.sh"
+          if [ -f "$f" ]; then
+            bash "$f"
+          else
+            echo "SKIP: ${f} absent"
+          fi
+
+      - name: Nettoyage
+        if: always()
+        run: scripts/cleanup-all.sh || true

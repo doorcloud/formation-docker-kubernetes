@@ -1,0 +1,30 @@
+#cloud-config
+# VM Ubuntu 24.04 de TEST / de SECOURS pour la formation Docker (Cloudoor).
+# Usage : voir infra/digitalocean/README.md. Aucun secret ici : la clé publique est injectée par create-vms.sh.
+users:
+  - name: formation
+    groups: [sudo, docker]
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      - __SSH_PUBKEY__
+package_update: true
+package_upgrade: false
+packages: [ca-certificates, curl, git, jq, unzip, tree, htop, apparmor, apparmor-utils]
+write_files:
+  - path: /etc/motd
+    content: |
+      Formation Docker & Kubernetes - Cloudoor - VM de lab (Ubuntu 24.04).
+      Cette VM est temporaire et sera detruite a la fin de la formation.
+runcmd:
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - . /etc/os-release && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  - usermod -aG docker formation
+  - sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config && systemctl restart ssh
+  - su - formation -c "git clone https://github.com/doorcloud/formation-docker-kubernetes.git || true"
+  - touch /var/lib/cloud/instance/formation-ready

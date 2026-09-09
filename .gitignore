@@ -1,0 +1,10 @@
+.env
+keys
+keys/
+*.pem
+private/
+id_*
+kubeconfig*
+.DS_Store
+__pycache__/
+*.py[cod]
