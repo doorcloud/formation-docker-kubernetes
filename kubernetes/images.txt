@@ -1,0 +1,11 @@
+# Images des labs Kubernetes, miroir Docker Hub -> ghcr.io/doorcloud/formation/<nom>:<tag>
+# Format : <source> <cible>
+# Pourquoi : depuis les clusters DKS (Abidjan), les pulls Docker Hub sont tres lents
+# (~30-180 KiB/s observes le 09/09/2026) alors que ghcr.io tourne a ~5 MiB/s.
+# Le workflow .github/workflows/mirror-images.yml copie les manifestes multi-arch.
+docker.io/library/nginx:1.27-alpine                 ghcr.io/doorcloud/formation/nginx:1.27-alpine
+docker.io/library/nginx:1.28-alpine                 ghcr.io/doorcloud/formation/nginx:1.28-alpine
+docker.io/library/busybox:1.36                      ghcr.io/doorcloud/formation/busybox:1.36
+docker.io/library/redis:7-alpine                    ghcr.io/doorcloud/formation/redis:7-alpine
+docker.io/nginxinc/nginx-unprivileged:1.27-alpine   ghcr.io/doorcloud/formation/nginx-unprivileged:1.27-alpine
+docker.io/curlimages/curl:8.10.1                    ghcr.io/doorcloud/formation/curl:8.10.1

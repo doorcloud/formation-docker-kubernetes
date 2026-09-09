@@ -1,0 +1,54 @@
+name: mirror-images
+
+# Copie les images des labs Kubernetes de Docker Hub vers ghcr.io/doorcloud/formation/*
+# (manifestes multi-arch, sans pull local). Voir kubernetes/images.txt.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - kubernetes/images.txt
+      - .github/workflows/mirror-images.yml
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login Docker Hub (evite le rate limit anonyme, optionnel)
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copier les manifestes
+        run: |
+          set -euo pipefail
+          grep -vE '^\s*(#|$)' kubernetes/images.txt | while read -r src dst; do
+            echo "== $src -> $dst"
+            docker buildx imagetools create --tag "$dst" "$src"
+            docker buildx imagetools inspect "$dst" | head -5
+          done
+
+      - name: Verifier le pull anonyme
+        run: |
+          set -euo pipefail
+          docker logout ghcr.io
+          grep -vE '^\s*(#|$)' kubernetes/images.txt | while read -r _ dst; do
+            docker manifest inspect "$dst" >/dev/null && echo "OK anonyme: $dst" \
+              || { echo "KO: $dst n'est pas lisible anonymement (rendre le package public)"; exit 1; }
+          done
